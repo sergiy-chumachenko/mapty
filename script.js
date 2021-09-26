@@ -16,7 +16,7 @@ class Workout {
       'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     this.description = `${this.type[0].toUpperCase() + this.type.slice(1)} on ${
       months[this.date.getMonth()]
-    }, ${this.date.getDay()}`;
+    }, ${this.date.getDate()}`;
   }
   click() {
     this.clicks++;
@@ -53,6 +53,8 @@ class Cycling extends Workout {
 // APPLICATION ARCHITECTURE
 const form = document.querySelector('.form');
 const containerWorkouts = document.querySelector('.workouts');
+const editWorkout = document.querySelector('.edit');
+const deleteWorkout = document.querySelector('.delete');
 const inputType = document.querySelector('.form__input--type');
 const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
@@ -75,7 +77,10 @@ class App {
     // Attach event handlers
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
-    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+    containerWorkouts.addEventListener(
+      'click',
+      this._workoutClickHandler.bind(this)
+    );
   }
 
   _getPosition() {
@@ -211,7 +216,13 @@ class App {
   _renderWorkout(workout) {
     let html = `
     <li class="workout workout--${workout.type}" data-id="${workout.id}">
-        <h2 class="workout__title">${workout.description}</h2>
+        <div class="workout__header">
+            <h2 class="workout__title">${workout.description}</h2>
+            <div class="workout__icons">
+              <span><i class="edit-workout fas fa-cogs fa-lg"></i></span> 
+              <span><i class="delete-workout far fa-times-circle fa-lg"></i>   </span> 
+            </div>
+        </div>
         <div class="workout__details">
             <span class="workout__icon">${
               workout.type === 'running' ? '🏃' : '🚴'
@@ -257,12 +268,21 @@ class App {
     }
     form.insertAdjacentHTML('afterend', html);
   }
-  _moveToPopup(e) {
+  _workoutClickHandler(e) {
     const workoutEl = e.target.closest('.workout');
     if (!workoutEl) return;
     const workout = this.#workouts.find(
       work => work.id === workoutEl.dataset.id
     );
+    if (e.target.classList.contains('edit-workout')) {
+      this._editWorkout(workout);
+    } else if (e.target.classList.contains('delete-workout')) {
+      this._deleteWorkout(workout);
+    } else {
+      this._moveToPopup(workout);
+    }
+  }
+  _moveToPopup(workout) {
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
       animate: true,
       pan: { duration: 1 },
@@ -280,6 +300,18 @@ class App {
     this.#workouts.forEach(work => {
       this._renderWorkout(work);
     });
+  }
+  _editWorkout(workout) {
+    console.log(workout);
+  }
+  _deleteWorkout(workout) {
+    localStorage.removeItem('workouts');
+    this.#workouts.splice(
+      this.#workouts.findIndex(work => work.id === workout.id),
+      1
+    );
+    this._setLocalStorage();
+    location.reload();
   }
   reset() {
     localStorage.removeItem('workouts');
